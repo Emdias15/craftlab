@@ -242,7 +242,7 @@ export default function Home() {
               style={{ position: "absolute", bottom: 0, right: 0, width: "54%", height: "54%", objectFit: "cover", border: `4px solid ${P.bg}`, filter: "saturate(0.7)" }}
             />
             <div style={{ position: "absolute", bottom: "5.5rem", left: "0.5rem", background: P.primary, color: "#fff", padding: "1.25rem 1.5rem", maxWidth: 175 }}>
-              <p style={{ fontFamily: T.serif, fontSize: "1.3rem", fontStyle: "italic", lineHeight: 1.3 }}>"Cada nó é uma promessa."</p>
+              <p style={{ fontFamily: T.serif, fontSize: "1.3rem", fontStyle: "italic", lineHeight: 1.3 }}>&quot;Cada nó é uma promessa.&quot;</p>
             </div>
           </div>
 
