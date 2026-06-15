@@ -1,27 +1,90 @@
+/* Google Fonts – MUST come first */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-cormorant: 'Cormorant Garamond', Georgia, serif;
+  --font-jost: 'Jost', system-ui, sans-serif;
+  /* Blue palette */
+  --c-primary:    #2E6B9E;   /* ocean blue */
+  --c-primary-h:  #1E5480;   /* hover */
+  --c-primary-l:  #5B96BF;   /* light blue accent */
+  --c-bg:         #EEF5FB;   /* pale blue-white bg */
+  --c-linen:      #E0EDF7;   /* light blue linen */
+  --c-cream:      #D0E5F5;   /* pale blue cream */
+  --c-earth:      #0D253F;   /* deep navy text */
+  --c-muted:      #5E8DAA;   /* muted blue */
+  --c-rope:       #7FADC8;   /* slate blue accent */
+  --c-sand:       #A8CBE0;   /* light blue sand */
+  --c-dark:       #0A1E32;   /* darkest navy (footer) */
+  --c-warm-white: #F0F7FD;   /* cool white */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--c-bg);
+  color: var(--c-earth);
+  font-family: 'Jost', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+h1, h2, h3 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 400;
 }
+
+/* ─── Hero Animations ────────────────────────── */
+@keyframes fadeSlideUp {
+  0%   { opacity: 0; transform: translateY(32px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.hero-title   { animation: fadeSlideUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+.hero-sub     { animation: fadeSlideUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both; }
+.hero-cta     { animation: fadeSlideUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both; }
+.hero-divider { animation: fadeIn 0.8s ease 0.1s both; }
+
+/* ─── Ornament divider ───────────────────────── */
+.ornament-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--c-rope);
+  font-family: 'Jost', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.ornament-line::before,
+.ornament-line::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+/* ─── Product card hover ─────────────────────── */
+.product-card img {
+  transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.product-card:hover img { transform: scale(1.07); }
+.card-overlay {
+  transform: translateY(100%);
+  transition: transform 0.35s ease;
+}
+.product-card:hover .card-overlay { transform: translateY(0); }
+
+/* ─── Scrollbar ──────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--c-linen); }
+::-webkit-scrollbar-thumb { background: var(--c-primary); border-radius: 99px; }
