@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { listProdutos, writeProduto } from "@/lib/storage";
 
-const DIR = path.join(process.cwd(), "content/produtos");
+export const dynamic = "force-dynamic";
 
 function slugify(nome: string) {
   return nome
@@ -13,25 +12,17 @@ function slugify(nome: string) {
 }
 
 export async function GET() {
-  if (!fs.existsSync(DIR)) return NextResponse.json([]);
-  const produtos = fs.readdirSync(DIR)
-    .filter(f => f.endsWith(".json"))
-    .map(f => {
-      const raw = JSON.parse(fs.readFileSync(path.join(DIR, f), "utf-8"));
-      return { slug: f.replace(".json", ""), ...raw };
-    });
+  const produtos = await listProdutos();
   return NextResponse.json(produtos);
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const slug = slugify(body.nome);
-  const file = path.join(DIR, `${slug}.json`);
-  if (fs.existsSync(file)) {
+  const existing = await listProdutos();
+  if (existing.find(p => p.slug === slug)) {
     return NextResponse.json({ error: "Já existe um produto com esse nome." }, { status: 409 });
   }
-  if (!fs.existsSync(DIR)) fs.mkdirSync(DIR, { recursive: true });
-  const { slug: _s, ...data } = body;
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
-  return NextResponse.json({ slug, ...data }, { status: 201 });
+  await writeProduto(slug, body);
+  return NextResponse.json({ slug, ...body }, { status: 201 });
 }

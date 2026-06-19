@@ -1,28 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { getProdutoStorage, writeProduto, deleteProduto } from "@/lib/storage";
 
-const DIR = path.join(process.cwd(), "content/produtos");
+export const dynamic = "force-dynamic";
 
 export async function GET(_req: NextRequest, { params }: { params: { slug: string } }) {
-  const file = path.join(DIR, `${params.slug}.json`);
-  if (!fs.existsSync(file)) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
-  const raw = JSON.parse(fs.readFileSync(file, "utf-8"));
-  return NextResponse.json({ slug: params.slug, ...raw });
+  const produto = await getProdutoStorage(params.slug);
+  if (!produto) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+  return NextResponse.json(produto);
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { slug: string } }) {
-  const file = path.join(DIR, `${params.slug}.json`);
-  if (!fs.existsSync(file)) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+  const existing = await getProdutoStorage(params.slug);
+  if (!existing) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
   const body = await req.json();
-  const { slug: _s, ...data } = body;
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
-  return NextResponse.json({ slug: params.slug, ...data });
+  await writeProduto(params.slug, body, existing.sha as string | undefined);
+  return NextResponse.json({ slug: params.slug, ...body });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { slug: string } }) {
-  const file = path.join(DIR, `${params.slug}.json`);
-  if (!fs.existsSync(file)) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
-  fs.unlinkSync(file);
+  const existing = await getProdutoStorage(params.slug);
+  if (!existing) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+  await deleteProduto(params.slug, existing.sha as string ?? "");
   return NextResponse.json({ ok: true });
 }
