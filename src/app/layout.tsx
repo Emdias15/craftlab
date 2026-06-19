@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -20,18 +18,16 @@ const jost = Jost({
 });
 
 export const metadata: Metadata = {
-  title: "CraftLab.ed | Artesanato em Corda",
-  description: "Peças artesanais feitas à mão em corda e macramé. Loja online com envio para todo o país.",
-  keywords: ["macramé", "artesanato", "corda", "feito à mão", "decoração", "Portugal"],
+  title: "CraftLab.ed — Cada Nó tem uma história.",
+  description: "Anilhas escutistas, porta-chaves e acessórios em corda feitos à mão. Cada Nó tem uma história. Envio para todo o país.",
+  keywords: ["anilha escutista", "artesanato escutista", "corda", "feito à mão", "Portugal", "macramé", "porta-chaves"],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt" className={`${cormorant.variable} ${jost.variable}`}>
       <body className="bg-warm-white text-earth font-sans antialiased flex min-h-screen flex-col">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        {children}
       </body>
     </html>
   );

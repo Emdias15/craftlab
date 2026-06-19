@@ -26,11 +26,18 @@ export function Footer() {
 
           {/* Brand */}
           <div style={{ gridColumn: "span 2" }}>
-            <p style={{ fontFamily: T.serif, fontSize: "3rem", fontStyle: "italic", color: P.warmWhite, lineHeight: 1, marginBottom: "0.25rem" }}>
-              CraftLab<span style={{ color: P.primary }}>.</span>ed
-            </p>
-            <p style={{ fontFamily: T.sans, fontSize: "0.5rem", letterSpacing: "0.3em", textTransform: "uppercase", color: `${P.sand}40`, marginBottom: "1.5rem" }}>
+            <div style={{ marginBottom: "0.5rem" }}>
+              <img
+                src="/logo.png"
+                alt="CraftLab.ed"
+                style={{ height: 72, width: 72, objectFit: "contain", mixBlendMode: "screen" }}
+              />
+            </div>
+            <p style={{ fontFamily: T.sans, fontSize: "0.5rem", letterSpacing: "0.35em", textTransform: "uppercase", color: `${P.sand}40`, marginBottom: "0.5rem" }}>
               Arte em Corda · Portugal
+            </p>
+            <p style={{ fontFamily: T.serif, fontStyle: "italic", fontSize: "1rem", color: `${P.sand}55`, marginBottom: "1.5rem" }}>
+              Cada Nó tem uma história.
             </p>
             <p style={{ fontFamily: T.sans, fontWeight: 300, fontSize: "0.88rem", color: `${P.sand}65`, maxWidth: 260, lineHeight: 1.8, marginBottom: "1.5rem" }}>
               Peças artesanais em macramé e corda natural, feitas com intenção e cuidado.
@@ -71,7 +78,13 @@ export function Footer() {
           <div>
             <p style={{ fontFamily: T.sans, fontSize: "0.55rem", letterSpacing: "0.25em", textTransform: "uppercase", color: P.rope, marginBottom: "1.25rem" }}>Redes</p>
             <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              {[{l:"Instagram",h:"#"},{l:"Pinterest",h:"#"},{l:"TikTok",h:"#"}].map(({l,h}) => (
+              <li>
+                <a href="https://www.instagram.com/craftlab.ed" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", fontFamily: T.sans, fontSize: "0.82rem", fontWeight: 300, color: `${P.sand}50`, textDecoration: "none" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+                  Instagram
+                </a>
+              </li>
+              {[{l:"Pinterest",h:"#"},{l:"TikTok",h:"#"}].map(({l,h}) => (
                 <li key={l}><a href={h} style={{ fontFamily: T.sans, fontSize: "0.82rem", fontWeight: 300, color: `${P.sand}50`, textDecoration: "none" }}>{l}</a></li>
               ))}
             </ul>

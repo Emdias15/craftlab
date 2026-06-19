@@ -101,8 +101,8 @@ export default function Home() {
             Artesanato Escutista Português
           </div>
 
-          <h1 className="hero-title" style={{ fontFamily: T.serif, fontStyle: "italic", fontWeight: 400, fontSize: "clamp(3.2rem, 8vw, 6.5rem)", lineHeight: 1.0, color: P.warmWhite, letterSpacing: "-0.01em", marginBottom: "1.75rem" }}>
-            Cada peça feita<br />com intenção.
+          <h1 className="hero-title" style={{ fontFamily: T.serif, fontStyle: "italic", fontWeight: 400, fontSize: "clamp(3rem, 7.5vw, 6.2rem)", lineHeight: 1.05, color: P.warmWhite, letterSpacing: "-0.01em", marginBottom: "1.5rem" }}>
+            Cada Nó tem<br />uma história.
           </h1>
 
           <p className="hero-sub" style={{ fontFamily: T.sans, fontWeight: 300, fontSize: "1.05rem", color: `${P.warmWhite}b8`, letterSpacing: "0.05em", maxWidth: 500, margin: "0 auto 2.75rem", lineHeight: 1.75 }}>
@@ -241,8 +241,8 @@ export default function Home() {
               alt="Anilha escutista"
               style={{ position: "absolute", bottom: 0, right: 0, width: "54%", height: "54%", objectFit: "cover", border: `4px solid ${P.bg}`, filter: "saturate(0.7)" }}
             />
-            <div style={{ position: "absolute", bottom: "5.5rem", left: "0.5rem", background: P.primary, color: "#fff", padding: "1.25rem 1.5rem", maxWidth: 175 }}>
-              <p style={{ fontFamily: T.serif, fontSize: "1.3rem", fontStyle: "italic", lineHeight: 1.3 }}>&quot;Cada nó é uma promessa.&quot;</p>
+            <div style={{ position: "absolute", bottom: "5.5rem", left: "0.5rem", background: P.primary, color: "#fff", padding: "1.25rem 1.5rem", maxWidth: 195 }}>
+              <p style={{ fontFamily: T.serif, fontSize: "1.25rem", fontStyle: "italic", lineHeight: 1.35 }}>&quot;Cada Nó tem uma história.&quot;</p>
             </div>
           </div>
 
