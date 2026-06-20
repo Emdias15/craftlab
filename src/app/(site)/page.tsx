@@ -25,8 +25,8 @@ const T = {
 
 const featured = [
   {
-    id: 1,
-    name: "Anilha Escutista Clássica",
+    id: "anilha-escutista-classica",
+    name: "Anilha Clássica",
     desc: "Em corda de poliéster trançada à mão",
     price: "4,50 €",
     tag: "Best seller",
@@ -49,8 +49,8 @@ const featured = [
     img: "/produtos/scout_hero.png",
   },
   {
-    id: 4,
-    name: "Combo Escutista Completo",
+    id: "combo-escutista-completo",
+    name: "Combo Completo",
     desc: "Anilha + Porta-chaves + Pulseira",
     price: "15,00 €",
     tag: "Oferta",
@@ -60,7 +60,7 @@ const featured = [
 
 const categories = [
   {
-    label: "Anilhas Escutistas",
+    label: "Anilhas",
     sub: "Nós de poliéster perfeitos",
     img: "/produtos/scout_anilha.png",
   },
@@ -98,7 +98,7 @@ export default function Home() {
 
         <div style={{ position: "relative", zIndex: 10, textAlign: "center", padding: "0 1.5rem", maxWidth: 880, margin: "0 auto" }}>
           <div className="ornament-line hero-divider" style={{ color: `${P.rope}88`, marginBottom: "2.5rem" }}>
-            Artesanato Escutista Português
+            Feito à mão, feito para ti
           </div>
 
           <h1 className="hero-title" style={{ fontFamily: T.serif, fontStyle: "italic", fontWeight: 400, fontSize: "clamp(3rem, 7.5vw, 6.2rem)", lineHeight: 1.05, color: P.warmWhite, letterSpacing: "-0.01em", marginBottom: "1.5rem" }}>
@@ -106,23 +106,12 @@ export default function Home() {
           </h1>
 
           <p className="hero-sub" style={{ fontFamily: T.sans, fontWeight: 300, fontSize: "1.05rem", color: `${P.warmWhite}b8`, letterSpacing: "0.05em", maxWidth: 500, margin: "0 auto 2.75rem", lineHeight: 1.75 }}>
-            Anilhas escutistas, porta-chaves e acessórios em corda de qualidade superior, feitos à mão com rigor e dedicação.
+            Acessórios em corda, com qualidade, rigor e dedicação.
           </p>
 
           <div className="hero-cta" style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <Link
-              href="/loja"
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem", background: P.primary, color: "#fff", padding: "1rem 2.5rem", fontFamily: T.sans, fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.2em", textTransform: "uppercase", textDecoration: "none" }}
-              onMouseEnter={e => (e.currentTarget.style.background = P.primaryH)}
-              onMouseLeave={e => (e.currentTarget.style.background = P.primary)}
-            >
+            <Link href="/loja" style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem", background: P.primary, color: "#fff", padding: "1.1rem 2.2rem", fontFamily: T.sans, fontSize: "0.65rem", fontWeight: 500, letterSpacing: "0.2em", textTransform: "uppercase", textDecoration: "none", transition: "background 0.3s" }} onMouseEnter={e => (e.currentTarget.style.background = P.primaryH)} onMouseLeave={e => (e.currentTarget.style.background = P.primary)}>
               Ver Coleção <ArrowRight size={14} />
-            </Link>
-            <Link
-              href="/loja?cat=combos"
-              style={{ display: "inline-flex", alignItems: "center", border: `1px solid ${P.warmWhite}40`, color: `${P.warmWhite}cc`, padding: "1rem 2.5rem", fontFamily: T.sans, fontSize: "0.7rem", fontWeight: 500, letterSpacing: "0.2em", textTransform: "uppercase", textDecoration: "none" }}
-            >
-              Ver Combos
             </Link>
           </div>
         </div>
@@ -238,7 +227,7 @@ export default function Home() {
             />
             <img
               src="/produtos/scout_anilha.png"
-              alt="Anilha escutista"
+              alt="Anilha de corda"
               style={{ position: "absolute", bottom: 0, right: 0, width: "54%", height: "54%", objectFit: "cover", border: `4px solid ${P.bg}`, filter: "saturate(0.7)" }}
             />
             <div style={{ position: "absolute", bottom: "5.5rem", left: "0.5rem", background: P.primary, color: "#fff", padding: "1.25rem 1.5rem", maxWidth: 195 }}>
@@ -252,8 +241,8 @@ export default function Home() {
             <h2 style={{ fontFamily: T.serif, fontStyle: "italic", fontWeight: 400, fontSize: "clamp(2.5rem,4vw,3.5rem)", color: P.earth, lineHeight: 1.1, marginBottom: "1.5rem" }}>
               Feito à mão,<br />com propósito.
             </h2>
-            <p style={{ fontFamily: T.sans, fontWeight: 300, color: P.muted, lineHeight: 1.85, fontSize: "0.95rem", marginBottom: "1rem" }}>
-              O CraftLab.ed nasceu da paixão pelo escutismo e pelo artesanato. Cada anilha, cada porta-chaves é criado com rigor, pensando em quem o vai usar no campo.
+            <p style={{ fontFamily: T.sans, fontWeight: 300, fontSize: "0.95rem", color: P.muted, lineHeight: 1.8, marginBottom: "2rem" }}>
+              O CraftLab.ed nasceu da paixão pelo artesanato. Cada anilha, cada porta-chaves é criado com rigor, pensando na resistência e no dia a dia.
             </p>
             <p style={{ fontFamily: T.sans, fontWeight: 300, color: P.muted, lineHeight: 1.85, fontSize: "0.95rem", marginBottom: "2.5rem" }}>
               Usamos corda 100% poliéster de qualidade superior para que o nó fique perfeito e a peça dure uma vida inteira. Podemos personalizar cores, tamanhos e até incluir símbolos do teu grupo.
