@@ -1,0 +1,14 @@
+{
+  "nome": "test1",
+  "descricao": "test1",
+  "descricaoLonga": "",
+  "preco": 2,
+  "categoria": "anilhas",
+  "tag": "Novo",
+  "stock": 0,
+  "destaque": true,
+  "disponivel": true,
+  "fotos": [
+    "https://res.cloudinary.com/dwbsdwjny/image/upload/v1782141606/craftlab_produtos/xzapyxdk2b0ovhqxrmuv.heic"
+  ]
+}
