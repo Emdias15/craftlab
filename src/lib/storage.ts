@@ -31,12 +31,12 @@ export async function listProdutos(): Promise<{ slug: string; [k: string]: unkno
       .map(f => ({ slug: f.replace(".json", ""), ...JSON.parse(fs.readFileSync(path.join(DIR, f), "utf-8")) }));
   }
 
-  const res = await fetch(ghUrl(`content/produtos`), { headers: ghHeaders(), next: { revalidate: 0 } });
+  const res = await fetch(ghUrl(`content/produtos`), { headers: ghHeaders(), cache: "no-store" });
   if (!res.ok) return [];
   const files: { name: string }[] = await res.json();
   const results = await Promise.all(
     files.filter(f => f.name.endsWith(".json")).map(async f => {
-      const r = await fetch(ghUrl(`content/produtos/${f.name}`), { headers: ghHeaders(), next: { revalidate: 0 } });
+      const r = await fetch(ghUrl(`content/produtos/${f.name}`), { headers: ghHeaders(), cache: "no-store" });
       const d = await r.json();
       const content = JSON.parse(Buffer.from(d.content, "base64").toString("utf-8"));
       return { slug: f.name.replace(".json", ""), ...content };
@@ -52,7 +52,7 @@ export async function getProdutoStorage(slug: string): Promise<{ slug: string; s
     return { slug, ...JSON.parse(fs.readFileSync(file, "utf-8")) };
   }
 
-  const res = await fetch(ghUrl(`content/produtos/${slug}.json`), { headers: ghHeaders(), next: { revalidate: 0 } });
+  const res = await fetch(ghUrl(`content/produtos/${slug}.json`), { headers: ghHeaders(), cache: "no-store" });
   if (!res.ok) return null;
   const d = await res.json();
   const content = JSON.parse(Buffer.from(d.content, "base64").toString("utf-8"));

@@ -23,6 +23,10 @@ export async function POST(req: NextRequest) {
   if (existing.find(p => p.slug === slug)) {
     return NextResponse.json({ error: "Já existe um produto com esse nome." }, { status: 409 });
   }
-  await writeProduto(slug, body);
+  try {
+    await writeProduto(slug, body);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message ?? "Erro ao criar produto" }, { status: 500 });
+  }
   return NextResponse.json({ slug, ...body }, { status: 201 });
 }
