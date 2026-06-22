@@ -34,10 +34,10 @@ type Produto = {
   fotos: string[];
 };
 
-const EMPTY: Omit<Produto, "slug"> = {
+const EMPTY = {
   nome: "", descricao: "", descricaoLonga: "",
-  preco: 0, categoria: "anilhas", tag: "",
-  stock: 10, destaque: false, disponivel: true, fotos: [],
+  preco: "" as unknown as number, categoria: "anilhas", tag: "",
+  stock: "" as unknown as number, destaque: false, disponivel: true, fotos: [] as string[],
 };
 
 export default function PainelPage() {
@@ -54,7 +54,7 @@ export default function PainelPage() {
 
   const carregar = () => {
     setLoading(true);
-    fetch("/api/admin/produtos")
+    fetch(`/api/admin/produtos?t=${Date.now()}`)
       .then(r => r.json())
       .then(d => { setProdutos(d); setLoading(false); });
   };
@@ -81,11 +81,19 @@ export default function PainelPage() {
 
   const salvar = async () => {
     setSaving(true);
+    
+    // Converter de volta para números antes de guardar
+    const dados = {
+      ...form,
+      preco: parseFloat(form.preco as unknown as string) || 0,
+      stock: parseInt(form.stock as unknown as string) || 0,
+    };
+
     if (editando) {
       const res = await fetch(`/api/admin/produtos/${editando.slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(dados),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); flash(d.error ?? "Erro ao guardar"); setSaving(false); return; }
       flash("Guardado!");
@@ -93,7 +101,7 @@ export default function PainelPage() {
       const res = await fetch("/api/admin/produtos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(dados),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); flash(d.error ?? "Erro"); setSaving(false); return; }
       flash("Produto criado!");
@@ -243,13 +251,13 @@ export default function PainelPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
                 <Field label="Preço (€) *">
                   <input type="number" min={0} step={0.01} value={form.preco}
-                    onChange={e => f("preco", parseFloat(e.target.value) || 0)}
+                    onChange={e => f("preco", e.target.value)}
                     style={inputStyle} />
                 </Field>
                 <Field label="Stock *">
                   <input type="number" min={0} step={1} value={form.stock}
-                    onChange={e => f("stock", parseInt(e.target.value) || 0)}
-                    style={{ ...inputStyle, color: stockColor(form.stock) }} />
+                    onChange={e => f("stock", e.target.value)}
+                    style={{ ...inputStyle, color: stockColor(parseInt(form.stock as unknown as string) || 0) }} />
                 </Field>
               </div>
 
