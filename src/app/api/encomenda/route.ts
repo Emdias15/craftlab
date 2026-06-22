@@ -23,12 +23,12 @@ export async function POST(req: NextRequest) {
   const total = itens.reduce((s, i) => s + i.preco * i.qty, 0);
 
   const msg = [
-    "🧵 *Nova Encomenda — CraftLab.ed*",
+    "* Nova Encomenda - CraftLab.ed *",
     "",
     `👤 *Nome:* ${nome}`,
     `📧 *Email:* ${email}`,
     `📞 *Telefone:* ${telefone || "—"}`,
-    `📍 *Morada:* ${morada || "—"}`,
+    `🏠 *Morada:* ${morada || "—"}`,
     "",
     "🛒 *Produtos:*",
     linhasItens,
