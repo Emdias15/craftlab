@@ -3,7 +3,7 @@ import { getProdutos } from "@/lib/produtos";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
-  const produtos = getProdutos();
+export async function GET() {
+  const produtos = await getProdutos();
   return NextResponse.json(produtos);
 }
