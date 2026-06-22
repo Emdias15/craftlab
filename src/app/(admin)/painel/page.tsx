@@ -50,6 +50,7 @@ export default function PainelPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const carregar = () => {
     setLoading(true);
@@ -116,6 +117,21 @@ export default function PainelPage() {
 
   const f = (field: keyof typeof form, val: unknown) =>
     setForm(prev => ({ ...prev, [field]: val }));
+
+  const uploadFoto = async (file: File) => {
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (data.url) {
+      f("fotos", [data.url]);
+      flash("Foto carregada!");
+    } else {
+      flash(data.error ?? "Erro ao carregar foto");
+    }
+    setUploading(false);
+  };
 
   const stockColor = (s: number) =>
     s === 0 ? P.red : s <= 3 ? "#e67e22" : P.green;
@@ -255,9 +271,16 @@ export default function PainelPage() {
                 </Field>
               </div>
 
-              <Field label="URL da foto (ou /produtos/nome.jpg)">
-                <input value={form.fotos?.[0] ?? ""} onChange={e => f("fotos", e.target.value ? [e.target.value] : [])}
-                  style={inputStyle} placeholder="https://... ou /produtos/imagem.jpg" />
+              <Field label="Foto do produto">
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {form.fotos?.[0] && (
+                    <img src={form.fotos[0]} alt="preview" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 4, border: `1px solid ${P.sand}60` }} />
+                  )}
+                  <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.85rem", background: uploading ? P.muted : P.linen, border: `2px dashed ${P.sand}`, borderRadius: 4, cursor: uploading ? "wait" : "pointer", fontFamily: T.sans, fontSize: "0.72rem", fontWeight: 500, color: P.primary, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadFoto(f); }} />
+                    {uploading ? "A carregar..." : "📷  Escolher foto"}
+                  </label>
+                </div>
               </Field>
 
               <div style={{ display: "flex", gap: "1.25rem", paddingTop: "0.5rem" }}>
