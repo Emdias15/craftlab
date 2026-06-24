@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     // Fazer upload para o Cloudinary usando upload_stream
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: "craftlab_produtos", format: "jpg", transformation: [{ quality: "auto", fetch_format: "auto" }] },
+        { folder: "craftlab_produtos" },
         (error, result) => {
           if (error) reject(error);
           else resolve(result);
@@ -31,7 +31,10 @@ export async function POST(req: NextRequest) {
       uploadStream.end(buffer);
     });
 
-    return NextResponse.json({ url: (result as any).secure_url });
+    const raw = (result as any).secure_url as string;
+    // Insert f_jpg,q_auto transformation so HEIC/HEIF from iPhone renders in all browsers
+    const url = raw.replace("/image/upload/", "/image/upload/f_jpg,q_auto/");
+    return NextResponse.json({ url });
   } catch (error) {
     console.error("Erro no Cloudinary:", error);
     return NextResponse.json({ error: "Erro ao fazer upload da imagem" }, { status: 500 });
