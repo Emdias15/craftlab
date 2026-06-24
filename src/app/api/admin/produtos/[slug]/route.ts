@@ -14,7 +14,7 @@ export async function PUT(req: NextRequest, { params }: { params: { slug: string
   if (!existing) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
   const body = await req.json();
   try {
-    await writeProduto(params.slug, body, existing.sha as string | undefined);
+    await writeProduto(params.slug, body);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message ?? "Erro ao guardar" }, { status: 500 });
   }
@@ -24,6 +24,6 @@ export async function PUT(req: NextRequest, { params }: { params: { slug: string
 export async function DELETE(_req: NextRequest, { params }: { params: { slug: string } }) {
   const existing = await getProdutoStorage(params.slug);
   if (!existing) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
-  await deleteProduto(params.slug, existing.sha as string ?? "");
+  await deleteProduto(params.slug);
   return NextResponse.json({ ok: true });
 }
