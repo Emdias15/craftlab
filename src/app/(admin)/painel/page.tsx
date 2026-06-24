@@ -1,133 +1,100 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 const P = {
-  primary: "#2E6B9E",
-  earth:   "#0D253F",
-  muted:   "#5E8DAA",
-  sand:    "#A8CBE0",
-  dark:    "#0A1E32",
-  bg:      "#EEF5FB",
-  linen:   "#E0EDF7",
-  warm:    "#F0F7FD",
-  red:     "#c0392b",
-  green:   "#27ae60",
+  primary: "#2E6B9E", earth: "#0D253F", muted: "#5E8DAA", sand: "#A8CBE0",
+  dark: "#0A1E32", bg: "#EEF5FB", linen: "#E0EDF7", warm: "#F0F7FD",
+  red: "#c0392b", green: "#27ae60",
 };
 const T = {
   serif: "'Cormorant Garamond', Georgia, serif",
-  sans:  "'Jost', system-ui, sans-serif",
+  sans: "'Jost', system-ui, sans-serif",
 };
 
 type Produto = {
-  slug: string;
-  nome: string;
-  descricao: string;
-  descricaoLonga?: string;
-  preco: number;
-  categoria: string;
-  tag?: string;
-  stock: number;
-  destaque: boolean;
-  disponivel: boolean;
-  fotos: string[];
-};
-
-const EMPTY = {
-  nome: "", descricao: "", descricaoLonga: "",
-  preco: "" as unknown as number, categoria: "anilhas", tag: "",
-  stock: "" as unknown as number, destaque: false, disponivel: true, fotos: [] as string[],
+  slug: string; nome: string; descricao: string; preco: number;
+  categoria: string; tag?: string; stock: number;
+  destaque: boolean; disponivel: boolean; fotos: string[];
 };
 
 export default function PainelPage() {
   const router = useRouter();
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editando, setEditando] = useState<Produto | null>(null);
-  const [criando, setCriando] = useState(false);
-  const [form, setForm] = useState<Omit<Produto, "slug">>(EMPTY);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [msgOk, setMsgOk] = useState(true);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [query, setQuery] = useState("");
+  const [categoria, setCategoria] = useState("todos");
+  const [dispFilter, setDispFilter] = useState<"todos" | "disponivel" | "esgotado">("todos");
+  const [editingStock, setEditingStock] = useState<string | null>(null);
+  const [stockVal, setStockVal] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
 
-  const carregar = () => {
+  const flash = (msg: string, ok = true) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const carregar = async () => {
     setLoading(true);
-    fetch(`/api/admin/produtos?t=${Date.now()}`)
-      .then(r => {
-        if (!r.ok) throw new Error("Sessão expirada. Recarrega a página.");
-        return r.json();
-      })
-      .then(d => {
-        if (!Array.isArray(d)) throw new Error("Resposta inválida do servidor.");
-        setProdutos(d);
-        setLoading(false);
-      })
-      .catch(e => {
-        flash(e.message ?? "Erro ao carregar produtos", false);
-        setLoading(false);
-      });
+    try {
+      const r = await fetch(`/api/admin/produtos?t=${Date.now()}`);
+      if (!r.ok) throw new Error("Sessão expirada");
+      setProdutos(await r.json());
+    } catch (e) {
+      flash((e as Error).message, false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { carregar(); }, []);
 
-  const flash = (text: string, ok = true) => { setMsg(text); setMsgOk(ok); setTimeout(() => setMsg(""), 4000); };
+  const filtered = useMemo(() => produtos.filter(p => {
+    if (query && !p.nome.toLowerCase().includes(query.toLowerCase())) return false;
+    if (categoria !== "todos" && p.categoria !== categoria) return false;
+    if (dispFilter === "disponivel" && (!p.disponivel || p.stock === 0)) return false;
+    if (dispFilter === "esgotado" && p.stock > 0) return false;
+    return true;
+  }), [produtos, query, categoria, dispFilter]);
 
-  const abrirEditar = (p: Produto) => {
-    setEditando(p);
-    setCriando(false);
-    setForm({ nome: p.nome, descricao: p.descricao, descricaoLonga: p.descricaoLonga ?? "",
-      preco: p.preco, categoria: p.categoria, tag: p.tag ?? "",
-      stock: p.stock, destaque: p.destaque, disponivel: p.disponivel, fotos: p.fotos });
-  };
+  const stats = useMemo(() => ({
+    total: produtos.length,
+    emStock: produtos.filter(p => p.stock > 0).length,
+    esgotados: produtos.filter(p => p.stock === 0).length,
+  }), [produtos]);
 
-  const abrirCriar = () => {
-    setCriando(true);
-    setEditando(null);
-    setForm(EMPTY);
-  };
-
-  const fechar = () => { setEditando(null); setCriando(false); };
-
-  const salvar = async () => {
-    setSaving(true);
-    
-    // Converter de volta para números antes de guardar
-    const dados = {
-      ...form,
-      preco: parseFloat(form.preco as unknown as string) || 0,
-      stock: parseInt(form.stock as unknown as string) || 0,
-    };
-
-    if (editando) {
-      const res = await fetch(`/api/admin/produtos/${editando.slug}`, {
+  const salvarStock = async (slug: string) => {
+    const produto = produtos.find(p => p.slug === slug);
+    if (!produto) return;
+    const novoStock = parseInt(stockVal) || 0;
+    try {
+      const r = await fetch(`/api/admin/produtos/${slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dados),
+        body: JSON.stringify({ ...produto, stock: novoStock }),
       });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); flash(d.error ?? "Erro ao guardar", false); setSaving(false); return; }
-      flash("Guardado!");
-    } else {
-      const res = await fetch("/api/admin/produtos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dados),
-      });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); flash(d.error ?? "Erro ao criar produto", false); setSaving(false); return; }
-      flash("Produto criado!");
+      if (!r.ok) throw new Error("Erro ao guardar stock");
+      setProdutos(prev => prev.map(p => p.slug === slug ? { ...p, stock: novoStock } : p));
+      flash("Stock actualizado!");
+    } catch (e) {
+      flash((e as Error).message, false);
+    } finally {
+      setEditingStock(null);
     }
-    setSaving(false);
-    fechar();
-    carregar();
   };
 
   const apagar = async (slug: string) => {
-    await fetch(`/api/admin/produtos/${slug}`, { method: "DELETE" });
-    setConfirmDelete(null);
-    flash("Apagado.");
-    carregar();
+    try {
+      await fetch(`/api/admin/produtos/${slug}`, { method: "DELETE" });
+      setProdutos(prev => prev.filter(p => p.slug !== slug));
+      flash("Produto apagado.");
+    } catch {
+      flash("Erro ao apagar produto.", false);
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   const sair = async () => {
@@ -135,247 +102,112 @@ export default function PainelPage() {
     router.push("/admin-login");
   };
 
-  const f = (field: keyof typeof form, val: unknown) =>
-    setForm(prev => ({ ...prev, [field]: val }));
+  const stockColor = (s: number) => s === 0 ? P.red : s <= 3 ? "#e67e22" : P.green;
 
-  const uploadFoto = async (file: File) => {
-    setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    if (data.url) {
-      f("fotos", [data.url]);
-      flash("Foto carregada!");
-    } else {
-      flash(data.error ?? "Erro ao carregar foto", false);
-    }
-    setUploading(false);
-  };
-
-  const stockColor = (s: number) =>
-    s === 0 ? P.red : s <= 3 ? "#e67e22" : P.green;
-
-  /* ── UI ─────────────────────────────────────────────────── */
   return (
     <div style={{ minHeight: "100svh", background: P.bg, fontFamily: T.sans }}>
 
-      {/* header */}
+      {toast && (
+        <div style={{ position: "fixed", top: "1rem", right: "1rem", zIndex: 200, background: toast.ok ? P.green : P.red, color: "#fff", padding: "0.75rem 1.25rem", borderRadius: 6, fontFamily: T.sans, fontSize: "0.75rem", letterSpacing: "0.08em", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
+          {toast.msg}
+        </div>
+      )}
+
       <div style={{ background: P.dark, padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <img src="/logo.png" alt="CraftLab.ed" style={{ height: 36, width: 36, objectFit: "contain" }} />
           <span style={{ fontFamily: T.serif, fontStyle: "italic", fontSize: "1.1rem", color: "#fff" }}>Painel de Gestão</span>
         </div>
-        <button onClick={sair}
-          style={{ fontFamily: T.sans, fontSize: "0.6rem", letterSpacing: "0.15em", textTransform: "uppercase", color: `${P.sand}80`, background: "none", border: "none", cursor: "pointer" }}>
+        <button onClick={sair} style={{ fontFamily: T.sans, fontSize: "0.6rem", letterSpacing: "0.15em", textTransform: "uppercase", color: `${P.sand}80`, background: "none", border: "none", cursor: "pointer" }}>
           Sair
         </button>
       </div>
 
-      {/* flash msg */}
-      {msg && (
-        <div style={{ background: msgOk ? P.green : P.red, color: "#fff", padding: "0.75rem 1.25rem", fontFamily: T.sans, fontSize: "0.75rem", letterSpacing: "0.1em", textAlign: "center" }}>
-          {msg}
+      <div style={{ background: P.earth, padding: "1rem 1.25rem", display: "flex", gap: "2rem" }}>
+        {[
+          { label: "Produtos", value: stats.total },
+          { label: "Em stock", value: stats.emStock },
+          { label: "Esgotados", value: stats.esgotados },
+        ].map(s => (
+          <div key={s.label}>
+            <div style={{ fontFamily: T.serif, fontSize: "1.8rem", color: "#fff", lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontFamily: T.sans, fontSize: "0.55rem", letterSpacing: "0.2em", textTransform: "uppercase", color: `${P.sand}80`, marginTop: "0.2rem" }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "1.25rem 1rem" }}>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1.25rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Pesquisar produtos..." style={{ flex: 1, padding: "0.65rem 0.875rem", border: `1px solid ${P.sand}80`, background: "#fff", fontFamily: T.sans, fontSize: "0.82rem", color: P.earth, outline: "none", boxSizing: "border-box" as const }} />
+            <button onClick={() => router.push("/painel/produto/novo")} style={{ background: P.primary, color: "#fff", border: "none", padding: "0.6rem 1.1rem", fontFamily: T.sans, fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap" }}>
+              + Novo
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <select value={categoria} onChange={e => setCategoria(e.target.value)} style={{ flex: 1, padding: "0.65rem 0.875rem", border: `1px solid ${P.sand}80`, background: "#fff", fontFamily: T.sans, fontSize: "0.82rem", color: P.earth, outline: "none" }}>
+              <option value="todos">Todas as categorias</option>
+              <option value="anilhas">Anilhas</option>
+              <option value="porta-chaves">Porta-chaves</option>
+              <option value="combos">Combos & Packs</option>
+            </select>
+            <select value={dispFilter} onChange={e => setDispFilter(e.target.value as "todos" | "disponivel" | "esgotado")} style={{ flex: 1, padding: "0.65rem 0.875rem", border: `1px solid ${P.sand}80`, background: "#fff", fontFamily: T.sans, fontSize: "0.82rem", color: P.earth, outline: "none" }}>
+              <option value="todos">Todos</option>
+              <option value="disponivel">Disponíveis</option>
+              <option value="esgotado">Esgotados</option>
+            </select>
+          </div>
         </div>
-      )}
 
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "1.5rem 1rem" }}>
-
-        {/* título + botão novo */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-          <p style={{ fontFamily: T.sans, fontSize: "0.6rem", letterSpacing: "0.25em", textTransform: "uppercase", color: P.muted }}>
-            {produtos.length} produto{produtos.length !== 1 ? "s" : ""}
-          </p>
-          <button onClick={abrirCriar}
-            style={{ background: P.primary, color: "#fff", border: "none", padding: "0.6rem 1.25rem", fontFamily: T.sans, fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", cursor: "pointer" }}>
-            + Novo produto
-          </button>
-        </div>
-
-        {/* lista */}
         {loading ? (
           <p style={{ textAlign: "center", color: P.muted, padding: "3rem 0", fontSize: "0.75rem" }}>A carregar...</p>
+        ) : filtered.length === 0 ? (
+          <p style={{ textAlign: "center", color: P.muted, padding: "3rem 0", fontSize: "0.75rem" }}>
+            {produtos.length === 0 ? "Nenhum produto ainda." : "Nenhum produto corresponde ao filtro."}
+          </p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {produtos.map(p => (
-              <div key={p.slug} style={{ background: "#fff", border: `1px solid ${P.sand}50`, padding: "1rem 1.125rem", display: "flex", alignItems: "center", gap: "0.875rem" }}>
-
-                {/* foto thumb */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            {filtered.map(p => (
+              <div key={p.slug} style={{ background: "#fff", border: `1px solid ${P.sand}50`, padding: "0.875rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 <div style={{ width: 52, height: 52, background: P.linen, flexShrink: 0, overflow: "hidden" }}>
                   {p.fotos?.[0] && <img src={p.fotos[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                 </div>
-
-                {/* info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 500, fontSize: "0.88rem", color: P.earth, marginBottom: "0.2rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {p.nome}
-                  </p>
-                  <p style={{ fontSize: "0.72rem", color: P.muted }}>{p.preco.toFixed(2).replace(".", ",")} €</p>
+                  <p style={{ fontWeight: 500, fontSize: "0.88rem", color: P.earth, marginBottom: "0.15rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.nome}</p>
+                  <p style={{ fontSize: "0.7rem", color: P.muted }}>{p.preco.toFixed(2).replace(".", ",")} € · {p.categoria}</p>
                 </div>
-
-                {/* stock badge — clicável para editar rapidamente */}
-                <button onClick={() => abrirEditar(p)}
-                  style={{ flexShrink: 0, background: stockColor(p.stock) + "18", border: `1px solid ${stockColor(p.stock)}50`, color: stockColor(p.stock), borderRadius: 4, padding: "0.3rem 0.6rem", fontFamily: T.sans, fontSize: "0.65rem", fontWeight: 600, cursor: "pointer", minWidth: 52, textAlign: "center" }}>
-                  {p.stock === 0 ? "Esgotado" : `Stock: ${p.stock}`}
-                </button>
-
-                {/* editar */}
-                <button onClick={() => abrirEditar(p)}
-                  style={{ flexShrink: 0, background: P.linen, border: `1px solid ${P.sand}60`, color: P.earth, padding: "0.45rem 0.875rem", fontFamily: T.sans, fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer" }}>
+                {editingStock === p.slug ? (
+                  <input
+                    type="number" min={0} value={stockVal}
+                    onChange={e => setStockVal(e.target.value)}
+                    onBlur={() => salvarStock(p.slug)}
+                    onKeyDown={e => { if (e.key === "Enter") salvarStock(p.slug); if (e.key === "Escape") setEditingStock(null); }}
+                    autoFocus
+                    style={{ width: 60, padding: "0.3rem 0.4rem", border: `1px solid ${P.primary}`, background: P.warm, fontFamily: T.sans, fontSize: "0.78rem", color: P.earth, textAlign: "center", outline: "none" }}
+                  />
+                ) : (
+                  <button onClick={() => { setEditingStock(p.slug); setStockVal(String(p.stock)); }} style={{ flexShrink: 0, background: stockColor(p.stock) + "18", border: `1px solid ${stockColor(p.stock)}50`, color: stockColor(p.stock), borderRadius: 4, padding: "0.28rem 0.55rem", fontFamily: T.sans, fontSize: "0.65rem", fontWeight: 600, cursor: "pointer", minWidth: 52, textAlign: "center" }}>
+                    {p.stock === 0 ? "Esgotado" : `${p.stock}`}
+                  </button>
+                )}
+                <button onClick={() => router.push(`/painel/produto/${p.slug}`)} style={{ flexShrink: 0, background: P.linen, border: `1px solid ${P.sand}60`, color: P.earth, padding: "0.4rem 0.75rem", fontFamily: T.sans, fontSize: "0.6rem", fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer" }}>
                   Editar
                 </button>
+                {confirmDelete === p.slug ? (
+                  <button onClick={() => apagar(p.slug)} style={{ flexShrink: 0, background: P.red, border: "none", color: "#fff", padding: "0.4rem 0.6rem", fontFamily: T.sans, fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
+                    Confirmar
+                  </button>
+                ) : (
+                  <button onClick={() => setConfirmDelete(p.slug)} style={{ flexShrink: 0, background: "none", border: `1px solid ${P.red}40`, color: P.red, padding: "0.4rem 0.6rem", fontFamily: T.sans, fontSize: "0.58rem", cursor: "pointer" }}>
+                    ×
+                  </button>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* ── MODAL EDITAR / CRIAR ──────────────────────────── */}
-      {(editando || criando) && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(10,30,50,0.7)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
-          onClick={e => { if (e.target === e.currentTarget) fechar(); }}>
-          <div style={{ background: "#fff", width: "100%", maxWidth: 640, maxHeight: "92svh", overflowY: "auto", borderRadius: "12px 12px 0 0", padding: "1.5rem 1.25rem 2rem" }}>
-
-            {/* handle bar */}
-            <div style={{ width: 40, height: 4, background: P.sand, borderRadius: 2, margin: "0 auto 1.25rem" }} />
-
-            <h2 style={{ fontFamily: T.serif, fontStyle: "italic", fontSize: "1.6rem", color: P.earth, marginBottom: "1.25rem" }}>
-              {criando ? "Novo produto" : "Editar produto"}
-            </h2>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-
-              <Field label="Nome do produto *">
-                <input value={form.nome} onChange={e => f("nome", e.target.value)}
-                  style={inputStyle} placeholder="Ex: Anilha Escutista Clássica" />
-              </Field>
-
-              <Field label="Descrição curta *">
-                <input value={form.descricao} onChange={e => f("descricao", e.target.value)}
-                  style={inputStyle} placeholder="Ex: Em corda de algodão trançada à mão" />
-              </Field>
-
-              <Field label="Descrição detalhada">
-                <textarea value={form.descricaoLonga} onChange={e => f("descricaoLonga", e.target.value)}
-                  rows={3} style={{ ...inputStyle, resize: "vertical" }} placeholder="Detalhes do produto..." />
-              </Field>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                <Field label="Preço (€) *">
-                  <input type="number" min={0} step={0.01} value={form.preco}
-                    onChange={e => f("preco", e.target.value)}
-                    style={inputStyle} />
-                </Field>
-                <Field label="Stock *">
-                  <input type="number" min={0} step={1} value={form.stock}
-                    onChange={e => f("stock", e.target.value)}
-                    style={{ ...inputStyle, color: stockColor(parseInt(form.stock as unknown as string) || 0) }} />
-                </Field>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                <Field label="Categoria">
-                  <select value={form.categoria} onChange={e => f("categoria", e.target.value)} style={inputStyle}>
-                    <option value="anilhas">Anilhas</option>
-                    <option value="porta-chaves">Porta-chaves</option>
-                    <option value="combos">Combos & Packs</option>
-                  </select>
-                </Field>
-                <Field label="Etiqueta">
-                  <select value={form.tag} onChange={e => f("tag", e.target.value)} style={inputStyle}>
-                    <option value="">Nenhuma</option>
-                    <option value="Best seller">Best Seller</option>
-                    <option value="Novo">Novo</option>
-                    <option value="Oferta">Oferta</option>
-                  </select>
-                </Field>
-              </div>
-
-              <Field label="Foto do produto">
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  {form.fotos?.[0] && (
-                    <img src={form.fotos[0]} alt="preview" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 4, border: `1px solid ${P.sand}60` }} />
-                  )}
-                  <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.85rem", background: uploading ? P.muted : P.linen, border: `2px dashed ${P.sand}`, borderRadius: 4, cursor: uploading ? "wait" : "pointer", fontFamily: T.sans, fontSize: "0.72rem", fontWeight: 500, color: P.primary, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadFoto(f); }} />
-                    {uploading ? "A carregar..." : "📷  Escolher foto"}
-                  </label>
-                </div>
-              </Field>
-
-              <div style={{ display: "flex", gap: "1.25rem", paddingTop: "0.5rem" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.8rem", color: P.earth }}>
-                  <input type="checkbox" checked={form.disponivel} onChange={e => f("disponivel", e.target.checked)}
-                    style={{ width: 18, height: 18, accentColor: P.primary }} />
-                  Disponível para venda
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.8rem", color: P.earth }}>
-                  <input type="checkbox" checked={form.destaque} onChange={e => f("destaque", e.target.checked)}
-                    style={{ width: 18, height: 18, accentColor: P.primary }} />
-                  Em destaque
-                </label>
-              </div>
-
-              {/* botões */}
-              <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
-                <button onClick={fechar}
-                  style={{ flex: 1, padding: "0.9rem", background: P.linen, border: `1px solid ${P.sand}60`, color: P.earth, fontFamily: T.sans, fontSize: "0.65rem", fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer" }}>
-                  Cancelar
-                </button>
-                <button onClick={salvar} disabled={saving || !form.nome || !form.descricao}
-                  style={{ flex: 2, padding: "0.9rem", background: saving ? P.muted : P.primary, color: "#fff", border: "none", fontFamily: T.sans, fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", cursor: saving ? "wait" : "pointer" }}>
-                  {saving ? "A guardar..." : "Guardar"}
-                </button>
-              </div>
-
-              {/* apagar (só ao editar) */}
-              {editando && (
-                confirmDelete === editando.slug ? (
-                  <div style={{ display: "flex", gap: "0.75rem" }}>
-                    <button onClick={() => setConfirmDelete(null)}
-                      style={{ flex: 1, padding: "0.75rem", background: P.linen, border: `1px solid ${P.sand}60`, color: P.earth, fontFamily: T.sans, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer" }}>
-                      Cancelar
-                    </button>
-                    <button onClick={() => apagar(editando.slug)}
-                      style={{ flex: 1, padding: "0.75rem", background: P.red, color: "#fff", border: "none", fontFamily: T.sans, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer" }}>
-                      Confirmar apagar
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => setConfirmDelete(editando.slug)}
-                    style={{ padding: "0.65rem", background: "none", border: `1px solid ${P.red}40`, color: P.red, fontFamily: T.sans, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer" }}>
-                    Apagar produto
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={{ display: "block", fontFamily: "'Jost', system-ui, sans-serif", fontSize: "0.58rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#5E8DAA", marginBottom: "0.4rem" }}>
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "0.75rem 0.875rem",
-  border: "1px solid #A8CBE080",
-  background: "#F0F7FD",
-  fontFamily: "'Jost', system-ui, sans-serif",
-  fontSize: "0.9rem",
-  color: "#0D253F",
-  outline: "none",
-  boxSizing: "border-box",
-  borderRadius: 0,
-  WebkitAppearance: "none",
-};
