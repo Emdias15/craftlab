@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     // Fazer upload para o Cloudinary usando upload_stream
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: "craftlab_produtos" },
+        { folder: "craftlab_produtos", format: "jpg", transformation: [{ quality: "auto", fetch_format: "auto" }] },
         (error, result) => {
           if (error) reject(error);
           else resolve(result);
