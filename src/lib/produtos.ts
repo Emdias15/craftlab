@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+import { supabase } from "@/lib/supabase";
 
 export type Produto = {
   slug: string;
@@ -15,67 +14,64 @@ export type Produto = {
   fotos: string[];
 };
 
-const isVercel = process.env.VERCEL === "1";
-const REPO   = process.env.GITHUB_REPO   ?? "";
-const BRANCH = process.env.GITHUB_BRANCH ?? "main";
-const TOKEN  = process.env.GITHUB_TOKEN  ?? "";
+type Row = {
+  slug: string;
+  nome: string;
+  descricao: string;
+  descricao_longa: string | null;
+  preco: number;
+  categoria: string;
+  tag: string | null;
+  stock: number;
+  destaque: boolean;
+  disponivel: boolean;
+  fotos: string[];
+};
 
-function ghHeaders() {
+function toproduto(row: Row): Produto {
   return {
-    Authorization: `Bearer ${TOKEN}`,
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
+    slug: row.slug,
+    nome: row.nome,
+    descricao: row.descricao,
+    descricaoLonga: row.descricao_longa ?? undefined,
+    preco: row.preco,
+    categoria: row.categoria as Produto["categoria"],
+    tag: row.tag ?? undefined,
+    stock: row.stock,
+    destaque: row.destaque,
+    disponivel: row.disponivel,
+    fotos: row.fotos,
   };
 }
 
-function ghUrl(filePath: string) {
-  return `https://api.github.com/repos/${REPO}/contents/${filePath}`;
-}
-
 export async function getProdutos(): Promise<Produto[]> {
-  if (!isVercel) {
-    const dir = path.join(process.cwd(), "content/produtos");
-    if (!fs.existsSync(dir)) return [];
-    return fs
-      .readdirSync(dir)
-      .filter(f => f.endsWith(".json"))
-      .map(f => {
-        const raw = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
-        return { slug: f.replace(".json", ""), ...raw } as Produto;
-      })
-      .filter(p => p.disponivel);
-  }
-
-  const res = await fetch(ghUrl("content/produtos"), { headers: ghHeaders(), cache: "no-store" });
-  if (!res.ok) return [];
-  const files: { name: string }[] = await res.json();
-  const results = await Promise.all(
-    files.filter(f => f.name.endsWith(".json")).map(async f => {
-      const r = await fetch(ghUrl(`content/produtos/${f.name}`), { headers: ghHeaders(), cache: "no-store" });
-      const d = await r.json();
-      const content = JSON.parse(Buffer.from(d.content, "base64").toString("utf-8"));
-      return { slug: f.name.replace(".json", ""), ...content } as Produto;
-    })
-  );
-  return results.filter(p => p.disponivel);
+  const { data, error } = await supabase
+    .from("produtos")
+    .select("*")
+    .eq("disponivel", true)
+    .order("nome");
+  if (error) return [];
+  return (data as Row[]).map(toproduto);
 }
 
 export async function getProdutosDestaque(): Promise<Produto[]> {
-  const produtos = await getProdutos();
-  return produtos.filter(p => p.destaque).slice(0, 4);
+  const { data, error } = await supabase
+    .from("produtos")
+    .select("*")
+    .eq("disponivel", true)
+    .eq("destaque", true)
+    .order("nome")
+    .limit(4);
+  if (error) return [];
+  return (data as Row[]).map(toproduto);
 }
 
 export async function getProduto(slug: string): Promise<Produto | null> {
-  if (!isVercel) {
-    const file = path.join(process.cwd(), "content/produtos", `${slug}.json`);
-    if (!fs.existsSync(file)) return null;
-    const raw = JSON.parse(fs.readFileSync(file, "utf-8"));
-    return { slug, ...raw } as Produto;
-  }
-
-  const res = await fetch(ghUrl(`content/produtos/${slug}.json`), { headers: ghHeaders(), cache: "no-store" });
-  if (!res.ok) return null;
-  const d = await res.json();
-  const content = JSON.parse(Buffer.from(d.content, "base64").toString("utf-8"));
-  return { slug, ...content } as Produto;
+  const { data, error } = await supabase
+    .from("produtos")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+  if (error) return null;
+  return toproduto(data as Row);
 }
