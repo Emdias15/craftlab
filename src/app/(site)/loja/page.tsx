@@ -29,22 +29,35 @@ const categorias = [
   { id: "combos",      label: "Combos & Packs" },
 ];
 
+const COR_HEX: Record<string, string> = {
+  Vermelho: "#e74c3c", Azul: "#2E6B9E", Verde: "#27ae60",
+  Amarelo: "#f1c40f", Laranja: "#e67e22", Rosa: "#ff69b4",
+  Roxo: "#8e44ad", Preto: "#2c3e50", Branco: "#ecf0f1",
+  Cinzento: "#95a5a6", Castanho: "#8B6914", Multicolor: "multicolor",
+};
 
 export default function LojaPage() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [catAtiva, setCatAtiva] = useState("todos");
+  const [corAtiva, setCorAtiva] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(false);
   const { addItem } = useCart();
 
   useEffect(() => {
     fetch("/api/produtos")
       .then(r => r.json())
-      .then(data => { setProdutos(data); setLoading(false); });
+      .then(data => { setProdutos(data); setLoading(false); })
+      .catch(() => { setLoading(false); setErro(true); });
   }, []);
 
-  const filtrados = catAtiva === "todos"
-    ? produtos
-    : produtos.filter(p => p.categoria === catAtiva);
+  const coresDisponiveis = Array.from(
+    new Set(produtos.flatMap(p => p.cores ?? []))
+  ).sort();
+
+  const filtrados = produtos
+    .filter(p => catAtiva === "todos" || p.categoria === catAtiva)
+    .filter(p => !corAtiva || (p.cores ?? []).includes(corAtiva));
 
   const fotoUrl = (p: Produto) =>
     p.fotos?.[0]?.startsWith("http") ? p.fotos[0] : p.fotos?.[0] ?? "";
@@ -85,6 +98,30 @@ export default function LojaPage() {
             </button>
           ))}
         </div>
+        {coresDisponiveis.length > 0 && (
+          <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0.65rem 1.5rem", borderTop: `1px solid ${P.sand}40`, display: "flex", alignItems: "center", gap: "0.5rem", overflowX: "auto" }}>
+            <span style={{ fontFamily: T.sans, fontSize: "0.55rem", letterSpacing: "0.2em", textTransform: "uppercase", color: P.muted, whiteSpace: "nowrap", marginRight: "0.25rem" }}>Cor:</span>
+            <button onClick={() => setCorAtiva(null)}
+              style={{ fontFamily: T.sans, fontSize: "0.6rem", letterSpacing: "0.15em", textTransform: "uppercase", padding: "0.3rem 0.75rem", border: `1px solid ${!corAtiva ? P.primary : P.sand}`, background: !corAtiva ? P.primary : "transparent", color: !corAtiva ? "#fff" : P.muted, cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.15s" }}>
+              Todas
+            </button>
+            {coresDisponiveis.map(cor => {
+              const hex = COR_HEX[cor];
+              const ativa = corAtiva === cor;
+              return (
+                <button key={cor} onClick={() => setCorAtiva(ativa ? null : cor)}
+                  style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontFamily: T.sans, fontSize: "0.6rem", letterSpacing: "0.15em", textTransform: "uppercase", padding: "0.3rem 0.75rem", border: `1px solid ${ativa ? P.primary : P.sand}`, background: ativa ? P.linen : "transparent", color: ativa ? P.primary : P.muted, cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.15s" }}>
+                  {hex === "multicolor" ? (
+                    <span style={{ width: 10, height: 10, borderRadius: "50%", background: "linear-gradient(135deg,#e74c3c,#f1c40f,#27ae60,#2E6B9E,#8e44ad)", display: "inline-block", flexShrink: 0 }} />
+                  ) : hex ? (
+                    <span style={{ width: 10, height: 10, borderRadius: "50%", background: hex, border: hex === "#ecf0f1" ? `1px solid ${P.sand}` : "none", display: "inline-block", flexShrink: 0 }} />
+                  ) : null}
+                  {cor}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── PRODUTOS ───────────────────────────────── */}
@@ -96,6 +133,15 @@ export default function LojaPage() {
               <p style={{ fontFamily: T.sans, fontSize: "0.7rem", letterSpacing: "0.2em", textTransform: "uppercase", color: P.muted }}>
                 A carregar produtos...
               </p>
+            </div>
+          ) : erro ? (
+            <div style={{ textAlign: "center", padding: "5rem 0" }}>
+              <p style={{ fontFamily: T.serif, fontStyle: "italic", fontSize: "2rem", color: P.earth, marginBottom: "0.75rem" }}>
+                Não foi possível carregar os produtos.
+              </p>
+              <button onClick={() => { setErro(false); setLoading(true); fetch("/api/produtos").then(r => r.json()).then(data => { setProdutos(data); setLoading(false); }).catch(() => { setLoading(false); setErro(true); }); }} style={{ fontFamily: T.sans, fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: P.primary, background: "none", border: `1px solid ${P.primary}`, padding: "0.6rem 1.5rem", cursor: "pointer" }}>
+                Tentar novamente
+              </button>
             </div>
           ) : filtrados.length === 0 ? (
             <div style={{ textAlign: "center", padding: "5rem 0" }}>

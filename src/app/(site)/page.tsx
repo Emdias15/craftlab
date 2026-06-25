@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, MoveRight } from "lucide-react";
+import { getProdutosDestaque, type Produto } from "@/lib/produtos";
 
 const P = {
   primary: "#2E6B9E",
@@ -23,41 +25,6 @@ const T = {
   sans: "'Jost', system-ui, sans-serif",
 };
 
-
-const featured = [
-  {
-    id: "anilha-escutista-classica",
-    name: "Anilha Clássica",
-    desc: "Em corda de poliéster trançada à mão",
-    price: "4,50 €",
-    tag: "Best seller",
-    img: "/produtos/scout_anilha.png",
-  },
-  {
-    id: 2,
-    name: "Porta-chaves Nó Náutico",
-    desc: "Corda resistente com mosquetão",
-    price: "6,00 €",
-    tag: "Novo",
-    img: "/produtos/scout_keychain.png",
-  },
-  {
-    id: 3,
-    name: "Anilha Dupla Colorida",
-    desc: "Combinação de cores à escolha",
-    price: "7,00 €",
-    tag: null,
-    img: "/produtos/scout_hero.png",
-  },
-  {
-    id: "combo-escutista-completo",
-    name: "Combo Completo",
-    desc: "Anilha + Porta-chaves + Pulseira",
-    price: "15,00 €",
-    tag: "Oferta",
-    img: "/produtos/scout_process.png",
-  },
-];
 
 const categories = [
   {
@@ -85,6 +52,12 @@ const perks = [
 ];
 
 export default function Home() {
+  const [featured, setFeatured] = useState<Produto[]>([]);
+
+  useEffect(() => {
+    getProdutosDestaque().then(setFeatured);
+  }, []);
+
   return (
 
     <div style={{ width: "100%", overflowX: "hidden" }}>
@@ -150,9 +123,11 @@ export default function Home() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "1.75rem" }}>
             {featured.map((p) => (
-              <Link key={p.id} href={`/produto/${p.id}`} className="product-card" style={{ display: "block", textDecoration: "none" }}>
+              <Link key={p.slug} href={`/produto/${p.slug}`} className="product-card" style={{ display: "block", textDecoration: "none" }}>
                 <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden", background: P.cream, marginBottom: "1.1rem" }}>
-                  <img src={p.img} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  {p.fotos[0] && (
+                    <img src={p.fotos[0]} alt={p.nome} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  )}
                   {p.tag && (
                     <span style={{ position: "absolute", top: 12, left: 12, background: P.primary, color: "#fff", fontFamily: T.sans, fontSize: "0.52rem", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", padding: "0.3rem 0.75rem" }}>
                       {p.tag}
@@ -162,9 +137,11 @@ export default function Home() {
                     <span style={{ fontFamily: T.sans, fontSize: "0.6rem", letterSpacing: "0.22em", textTransform: "uppercase", color: P.warmWhite }}>Ver Produto</span>
                   </div>
                 </div>
-                <p style={{ fontFamily: T.sans, fontSize: "0.85rem", fontWeight: 500, color: P.earth }}>{p.name}</p>
-                <p style={{ fontFamily: T.sans, fontSize: "0.75rem", color: P.rope, marginTop: "0.2rem", fontWeight: 300, fontStyle: "italic" }}>{p.desc}</p>
-                <p style={{ fontFamily: T.sans, fontSize: "0.85rem", color: P.primary, marginTop: "0.4rem", fontWeight: 500 }}>{p.price}</p>
+                <p style={{ fontFamily: T.sans, fontSize: "0.85rem", fontWeight: 500, color: P.earth }}>{p.nome}</p>
+                <p style={{ fontFamily: T.sans, fontSize: "0.75rem", color: P.rope, marginTop: "0.2rem", fontWeight: 300, fontStyle: "italic" }}>{p.descricao}</p>
+                <p style={{ fontFamily: T.sans, fontSize: "0.85rem", color: P.primary, marginTop: "0.4rem", fontWeight: 500 }}>
+                  {p.preco.toLocaleString("pt-PT", { style: "currency", currency: "EUR" })}
+                </p>
               </Link>
             ))}
           </div>

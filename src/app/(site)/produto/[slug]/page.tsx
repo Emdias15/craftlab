@@ -38,7 +38,8 @@ export default function ProdutoPage() {
   useEffect(() => {
     fetch(`/api/produtos/${slug}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { setProduto(data); setLoading(false); });
+      .then(data => { setProduto(data); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [slug]);
 
   if (loading) {

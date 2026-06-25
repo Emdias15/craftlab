@@ -12,6 +12,7 @@ export type Produto = {
   destaque: boolean;
   disponivel: boolean;
   fotos: string[];
+  cores: string[];
 };
 
 type Row = {
@@ -26,6 +27,7 @@ type Row = {
   destaque: boolean;
   disponivel: boolean;
   fotos: string[];
+  cores: string[] | null;
 };
 
 function toproduto(row: Row): Produto {
@@ -41,6 +43,7 @@ function toproduto(row: Row): Produto {
     destaque: row.destaque,
     disponivel: row.disponivel,
     fotos: row.fotos,
+    cores: row.cores ?? [],
   };
 }
 

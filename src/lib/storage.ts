@@ -12,6 +12,7 @@ type Row = {
   destaque: boolean;
   disponivel: boolean;
   fotos: string[];
+  cores: string[] | null;
 };
 
 function toproduto(row: Row) {
@@ -27,6 +28,7 @@ function toproduto(row: Row) {
     destaque: row.destaque,
     disponivel: row.disponivel,
     fotos: row.fotos,
+    cores: row.cores ?? [],
   };
 }
 
@@ -65,6 +67,7 @@ export async function writeProduto(
     destaque: data.destaque,
     disponivel: data.disponivel,
     fotos: data.fotos,
+    cores: (data.cores as string[]) ?? [],
   };
   const { error } = await supabase
     .from("produtos")

@@ -13,10 +13,25 @@ const T = {
   sans: "'Jost', system-ui, sans-serif",
 };
 
+const CORES_PREDEFINIDAS = [
+  { nome: "Vermelho", hex: "#e74c3c" },
+  { nome: "Azul", hex: "#2E6B9E" },
+  { nome: "Verde", hex: "#27ae60" },
+  { nome: "Amarelo", hex: "#f1c40f" },
+  { nome: "Laranja", hex: "#e67e22" },
+  { nome: "Rosa", hex: "#ff69b4" },
+  { nome: "Roxo", hex: "#8e44ad" },
+  { nome: "Preto", hex: "#2c3e50" },
+  { nome: "Branco", hex: "#ecf0f1" },
+  { nome: "Cinzento", hex: "#95a5a6" },
+  { nome: "Castanho", hex: "#8B6914" },
+  { nome: "Multicolor", hex: "multicolor" },
+];
+
 type FormData = {
   nome: string; descricao: string; descricaoLonga: string;
   preco: number | string; categoria: string; tag: string;
-  stock: number | string; destaque: boolean; disponivel: boolean; fotos: string[];
+  stock: number | string; destaque: boolean; disponivel: boolean; fotos: string[]; cores: string[];
 };
 
 export default function EditarProdutoPage({ params }: { params: { slug: string } }) {
@@ -26,6 +41,7 @@ export default function EditarProdutoPage({ params }: { params: { slug: string }
   const [uploading, setUploading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [corCustom, setCorCustom] = useState("");
 
   const flash = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -40,7 +56,7 @@ export default function EditarProdutoPage({ params }: { params: { slug: string }
         descricaoLonga: d.descricaoLonga ?? "", preco: d.preco ?? 0,
         categoria: d.categoria ?? "anilhas", tag: d.tag ?? "",
         stock: d.stock ?? 0, destaque: d.destaque ?? false,
-        disponivel: d.disponivel ?? true, fotos: d.fotos ?? [],
+        disponivel: d.disponivel ?? true, fotos: d.fotos ?? [], cores: d.cores ?? [],
       }))
       .catch(() => flash("Erro ao carregar produto", false));
   }, [params.slug]);
@@ -66,6 +82,22 @@ export default function EditarProdutoPage({ params }: { params: { slug: string }
 
   const removerFoto = (url: string) =>
     f("fotos", form!.fotos.filter(u => u !== url));
+
+  const toggleCor = (cor: string) => {
+    if (!form) return;
+    const cores = form.cores.includes(cor)
+      ? form.cores.filter(c => c !== cor)
+      : [...form.cores, cor];
+    f("cores", cores);
+  };
+
+  const adicionarCorCustom = () => {
+    if (!form) return;
+    const cor = corCustom.trim();
+    if (!cor || form.cores.includes(cor)) return;
+    f("cores", [...form.cores, cor]);
+    setCorCustom("");
+  };
 
   const salvar = async () => {
     if (!form || !form.nome || !form.descricao) return;
@@ -178,6 +210,41 @@ export default function EditarProdutoPage({ params }: { params: { slug: string }
                   <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files?.[0]; if (file) uploadFoto(file); }} />
                   {uploading ? "A carregar..." : "📷  Adicionar foto"}
                 </label>
+              )}
+            </div>
+          </Field>
+
+          <Field label={`Cores disponíveis${form.cores.length > 0 ? ` (${form.cores.length} selecionadas)` : ""}`}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                {CORES_PREDEFINIDAS.map(c => {
+                  const ativa = form.cores.includes(c.nome);
+                  return (
+                    <button key={c.nome} type="button" onClick={() => toggleCor(c.nome)}
+                      style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.35rem 0.75rem", border: `1px solid ${ativa ? P.primary : P.sand}`, background: ativa ? P.linen : "#fff", cursor: "pointer", fontFamily: T.sans, fontSize: "0.72rem", color: ativa ? P.primary : P.muted, fontWeight: ativa ? 600 : 400, transition: "all 0.15s" }}>
+                      {c.hex === "multicolor" ? (
+                        <span style={{ width: 12, height: 12, borderRadius: "50%", background: "linear-gradient(135deg,#e74c3c,#f1c40f,#27ae60,#2E6B9E,#8e44ad)", display: "inline-block", flexShrink: 0 }} />
+                      ) : (
+                        <span style={{ width: 12, height: 12, borderRadius: "50%", background: c.hex, border: c.hex === "#ecf0f1" ? `1px solid ${P.sand}` : "none", display: "inline-block", flexShrink: 0 }} />
+                      )}
+                      {c.nome}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <input value={corCustom} onChange={e => setCorCustom(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), adicionarCorCustom())} placeholder="Cor personalizada (ex: Azul Royal)..." style={{ ...inputStyle, flex: 1 }} />
+                <button type="button" onClick={adicionarCorCustom} style={{ padding: "0 1rem", background: P.primary, color: "#fff", border: "none", fontFamily: T.sans, fontSize: "0.65rem", letterSpacing: "0.1em", cursor: "pointer", whiteSpace: "nowrap" }}>+ Adicionar</button>
+              </div>
+              {form.cores.filter(c => !CORES_PREDEFINIDAS.map(x => x.nome).includes(c)).length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                  {form.cores.filter(c => !CORES_PREDEFINIDAS.map(x => x.nome).includes(c)).map(cor => (
+                    <span key={cor} style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", padding: "0.3rem 0.6rem", background: P.linen, border: `1px solid ${P.primary}`, fontFamily: T.sans, fontSize: "0.7rem", color: P.primary }}>
+                      {cor}
+                      <button type="button" onClick={() => toggleCor(cor)} style={{ background: "none", border: "none", color: P.muted, cursor: "pointer", padding: 0, lineHeight: 1, fontSize: "0.9rem" }}>×</button>
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           </Field>
